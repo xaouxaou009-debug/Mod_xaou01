@@ -96,22 +96,22 @@ local function jh_build_rows()
         jh_add_seed_keys(mgr and mgr.KnowNpcData or nil, seeds, seen)
         table.sort(seeds, function(a, b) return tonumber(a) < tonumber(b) end)
         for _, seed in ipairs(seeds) do
-            local know = nil
-            pcall(function() know = mgr:GetKnowNpcData(seed) end)
-            if know ~= nil then
-                local def = jh_resolve_def(mgr, school, seed)
-                local status = "อยู่"
-                pcall(function()
-                    if school:IsJianghuNpcDie(seed) then status = "เสียชีวิต"
-                    elseif school:IsJianghuNpcLeave(seed) then status = "ออกไปแล้ว" end
-                end)
-                rows[#rows + 1] = {
-                    seed=seed,
-                    def=def,
-                    name=jh_resolve_name(mgr, def, seed),
-                    status=status
-                }
-            end
+            -- Do not require KnowNpcData here. A newly generated/encountered
+            -- Jianghu NPC may already exist in the world registry before the
+            -- game creates a persistent relationship record. The Open Heart
+            -- action below can create that record safely via AddKnowNpcData.
+            local def = jh_resolve_def(mgr, school, seed)
+            local status = "อยู่"
+            pcall(function()
+                if school:IsJianghuNpcDie(seed) then status = "เสียชีวิต"
+                elseif school:IsJianghuNpcLeave(seed) then status = "ออกไปแล้ว" end
+            end)
+            rows[#rows + 1] = {
+                seed=seed,
+                def=def,
+                name=jh_resolve_name(mgr, def, seed),
+                status=status
+            }
         end
     end)
     if not ok then return {} end

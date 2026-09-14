@@ -108,26 +108,31 @@ function Xaou_BuildJianghuNpcRawList(limit)
         for _, seed in ipairs(seeds) do
             local know = nil
             pcall(function() know = mgr:GetKnowNpcData(seed) end)
+
+            -- Keep NPCs from the world registry even when KnowNpcData has not
+            -- been created yet. This lets newly generated/encountered NPCs
+            -- appear in the list; opening the heart creates KnowNpcData later.
+            local def = Xaou_ResolveJianghuDef(mgr, GSchool, seed)
+            local name = Xaou_ResolveJianghuName(mgr, def, seed)
+            local status = "อยู่"
+            pcall(function()
+                if GSchool:IsJianghuNpcDie(seed) then status = "ตาย"
+                elseif GSchool:IsJianghuNpcLeave(seed) then status = "ออกไปแล้ว" end
+            end)
+
+            local fav = "ยังไม่รู้จัก"
+            local open = "ปิด"
             if know ~= nil then
-                local def = Xaou_ResolveJianghuDef(mgr, GSchool, seed)
-                local name = Xaou_ResolveJianghuName(mgr, def, seed)
-                local status = "อยู่"
-                pcall(function()
-                    if GSchool:IsJianghuNpcDie(seed) then status = "ตาย"
-                    elseif GSchool:IsJianghuNpcLeave(seed) then status = "ออกไปแล้ว" end
-                end)
-
-                local fav = tostring(know.favour or "?")
-                local open = "ปิด"
-                if tonumber(know.hlock or 0) == 1 then open = "เปิด" else open = "ปิด" end
-
-                table.insert(list, {
-                    text = name .. "【" .. status .. " | ❤" .. fav .. " | ใจ:" .. open .. "】",
-                    page = "jhnpc_" .. tostring(seed)
-                })
-
-                if #list >= maxCount then break end
+                fav = tostring(know.favour or "?")
+                if tonumber(know.hlock or 0) == 1 then open = "เปิด" end
             end
+
+            table.insert(list, {
+                text = name .. "【" .. status .. " | ❤" .. fav .. " | ใจ:" .. open .. "】",
+                page = "jhnpc_" .. tostring(seed)
+            })
+
+            if #list >= maxCount then break end
         end
     end)
 
