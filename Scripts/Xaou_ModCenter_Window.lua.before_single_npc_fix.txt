@@ -618,7 +618,7 @@ local function xmc_action(action)
     if action=="warp_map" or action=="warp_home" or action=="warp_back" or action=="map_info" then
         if Xaou_WarpSystem==nil then pcall(require, 'Scripts/Xaou_WarpSystem.lua') end
         if Xaou_WarpSystem then
-            if action=="warp_map" and Xaou_WarpSystem.ShowMap then return Xaou_WarpSystem.ShowMap(XMC_Target) end
+            if action=="warp_map" and Xaou_WarpSystem.ShowMap then return Xaou_WarpSystem.ShowMap() end
             if action=="warp_home" and Xaou_WarpSystem.WarpSelectedNpcHome then return Xaou_WarpSystem.WarpSelectedNpcHome(XMC_Target) end
             if action=="warp_back" and Xaou_WarpSystem.BackToSchool then return Xaou_WarpSystem.BackToSchool() end
             if action=="map_info" and Xaou_WarpSystem.DebugMapInfo then return Xaou_WarpSystem.DebugMapInfo() end

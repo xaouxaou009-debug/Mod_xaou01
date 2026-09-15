@@ -15,14 +15,8 @@ function tbThing:OnStep(dt)
         xlua.private_accessible(CS.XiaWorld.AreaRoom)
         local target = tonumber(self.WenDu) or 20
         local room = building.AtRoom
-        local actual_temperature = tonumber(room.Temperature)
-        local current_offset = tonumber(room.m_fTemperatureOffset) or 0
-        if actual_temperature ~= nil then
-            local difference = target - actual_temperature
-            if math.abs(difference) > 0.05 then
-                room.m_fTemperatureOffset = current_offset + difference
-            end
-        end
+        local base_temperature = tonumber(room.m_fTemperature) or 0
+        room.m_fTemperatureOffset = target - base_temperature
     end)
     if not ok then self.Time = -8 end
 end

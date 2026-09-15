@@ -49,9 +49,11 @@ local XMC_Sections = {
         {text="หนังสือคัมภีร์", textEn="Manual Book Tools", action="book_menu"},
         
     }},
-    world = {title="โลก", titleEn="World", desc="ระบบวาร์ปและการเดินทางระหว่างแผนที่", descEn="Teleport and cross-map travel tools", features={
-        {text="เปิดแผนที่วาร์ป", textEn="Teleport Map", action="warp_map"},
-        {text="กลับสำนักหลัก", textEn="Return to Main Sect", action="warp_back"},
+    world = {title="กำลังพัฒนา", titleEn="In Development", desc="กำลังพัฒนา", descEn="Features under development", features={
+        
+       -- {text="เปิดแผนที่วาร์ป", action="warp_map"}, {text="วาร์ป NPC กลับสำนัก", action="warp_home"}, --
+       -- {text="เครื่องมือสร้าง", action="tools"}, --
+        
     }},
     developer = {title="แจ้งปัญหา", titleEn="Report an Issue", desc="แจ้งปัญหาถึงผู้จัดทำม็อด", descEn="Contact the mod developer", features={
         {text="Facebook ผู้พัฒนา", textEn="Developer Facebook", action="developer_facebook"},
@@ -615,15 +617,9 @@ local function xmc_action(action)
     Xaou_CloseStandaloneModCenter()
     if action=="tools" and Xaou_OpenConstructionToolsWindow then return Xaou_OpenConstructionToolsWindow() end
     if action=="selector" and Xaou_OpenExternalNpcSelector then return Xaou_OpenExternalNpcSelector() end
-    if action=="warp_map" or action=="warp_home" or action=="warp_back" or action=="map_info" then
-        if Xaou_WarpSystem==nil then pcall(require, 'Scripts/Xaou_WarpSystem.lua') end
-        if Xaou_WarpSystem then
-            if action=="warp_map" and Xaou_WarpSystem.ShowMap then return Xaou_WarpSystem.ShowMap(XMC_Target) end
-            if action=="warp_home" and Xaou_WarpSystem.WarpSelectedNpcHome then return Xaou_WarpSystem.WarpSelectedNpcHome(XMC_Target) end
-            if action=="warp_back" and Xaou_WarpSystem.BackToSchool then return Xaou_WarpSystem.BackToSchool() end
-            if action=="map_info" and Xaou_WarpSystem.DebugMapInfo then return Xaou_WarpSystem.DebugMapInfo() end
-        end
-    end
+    if action=="warp_map" and Xaou_WarpSystem and Xaou_WarpSystem.ShowMap then return Xaou_WarpSystem.ShowMap() end
+    if action=="warp_home" and Xaou_WarpSystem and Xaou_WarpSystem.WarpSelectedNpcHome then return Xaou_WarpSystem.WarpSelectedNpcHome(XMC_Target) end
+    if action=="map_info" and Xaou_WarpSystem and Xaou_WarpSystem.DebugMapInfo then return Xaou_WarpSystem.DebugMapInfo() end
     if action=="legacy_npc" then return xmc_open_legacy() end
     if world then world:ShowMsgBox(xmc_t("ฟังก์ชันนี้ยังไม่พร้อมใช้งาน", "This feature is not available yet")) end
 end

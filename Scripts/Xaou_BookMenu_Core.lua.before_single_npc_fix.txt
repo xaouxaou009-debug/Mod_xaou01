@@ -47,7 +47,7 @@ function Xaou_RunNewBookCommand(npc,command)
 
     if command.action=="warp" then
         if Xaou_WarpSystem and Xaou_WarpSystem.ShowMap then
-            local ok,err=pcall(function() return Xaou_WarpSystem.ShowMap(actor) end)
+            local ok,err=pcall(function() return Xaou_WarpSystem.ShowMap() end)
             return ok,ok and "เปิดแผนที่วาร์ปแล้ว" or tostring(err)
         end
         local ok,err=pcall(function() actor:TriggerStory("วาร์ป1") end)
