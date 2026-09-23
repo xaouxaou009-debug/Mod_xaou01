@@ -11,7 +11,6 @@ local XW_Page = 1
 local XW_PageSize = 6
 local XW_Visible = {}
 local XW_Target = nil
-local XW_Category = "all"
 
 -- Fallback Place IDs from the current game data. At runtime GetSchoolPlace() is preferred,
 -- so a compatible game build can provide its own authoritative mapping.
@@ -29,64 +28,6 @@ local XW_Schools = {
     {school=11, place="Place_HeHuan"},
     {school=12, place="Place_Desert1"},
     {school=13, place="Place_WuDang_JinDing"},
-}
-
--- Place IDs taken from Settings/World/Places in the 2026-09-15 game-data index.
--- Base/System placeholders are deliberately excluded. Runtime PlaceDef checks decide
--- which candidates are actually safe to show on the running game build.
-local XW_PlaceCandidates = {
-    -- Level 1: cities and large world regions that are not already sect destinations.
-    {place="Place_CentralPlains", category="region"},
-    {place="Place_DaLiangCity", category="region"},
-    {place="Place_Desert", category="region"},
-    {place="Place_FertileField", category="region"},
-    {place="Place_HeYinCity", category="region"},
-    {place="Place_HuCity", category="region"},
-    {place="Place_PanSheCity", category="region"},
-    {place="Place_ShanCity", category="region"},
-    {place="Place_Snowfield", category="region"},
-    {place="Place_SouthForest", category="region"},
-    {place="Place_SouthMount", category="region"},
-
-    -- Level 2: sub-locations and exploration points.
-    {place="Place_BaiMan1", category="site"}, {place="Place_BaiMan2", category="site"}, {place="Place_BaiMan3", category="site"},
-    {place="Place_BirthPlace11", category="site"}, {place="Place_BirthPlace12", category="site"}, {place="Place_BirthPlace13", category="site"},
-    {place="Place_BirthPlace14", category="site"}, {place="Place_BirthPlace15", category="site"}, {place="Place_BirthPlace16", category="site"},
-    {place="Place_CentralPlains1", category="site"}, {place="Place_CentralPlains2", category="site"}, {place="Place_CentralPlains3", category="site"},
-    {place="Place_CentralPlains4", category="site"}, {place="Place_CentralPlains5", category="site"},
-    {place="Place_DanXia1", category="site"}, {place="Place_DanXia2", category="site"}, {place="Place_DanXia3", category="site"},
-    {place="Place_Desert1", category="site"}, {place="Place_Desert2", category="site"}, {place="Place_Desert3", category="site"}, {place="Place_Desert4", category="site"},
-    {place="Place_FertileField1", category="site"}, {place="Place_FertileField2", category="site"}, {place="Place_FertileField3", category="site"},
-    {place="Place_FertileField4", category="site"}, {place="Place_FertileField5", category="site"},
-    {place="Place_HeHuan1", category="site"}, {place="Place_HeHuan2", category="site"}, {place="Place_Hei4", category="site"},
-    {place="Place_JiuHua1", category="site"}, {place="Place_JiuHua2", category="site"}, {place="Place_JiuHua3", category="site"},
-    {place="Place_KunLun1", category="site"}, {place="Place_KunLun2", category="site"}, {place="Place_KunLun2_1", category="site"},
-    {place="Place_LongHu1", category="site"}, {place="Place_LongHu2", category="site"},
-    {place="Place_Shu1", category="site"}, {place="Place_Shu2", category="site"}, {place="Place_Shu3", category="site"}, {place="Place_Shu4", category="site"}, {place="Place_Shu5", category="site"},
-    {place="Place_Snowfield1", category="site"}, {place="Place_Snowfield2", category="site"}, {place="Place_Snowfield3", category="site"},
-    {place="Place_SouthForest1", category="site"}, {place="Place_SouthForest2", category="site"}, {place="Place_SouthForest3", category="site"},
-    {place="Place_TianJi1", category="site"}, {place="Place_TianJi2", category="site"},
-    {place="Place_WuLian1", category="site"}, {place="Place_WuLian2", category="site"}, {place="Place_XianKong1", category="site"},
-
-    -- Level 3 / DLC / WuDang secondary locations.
-    {place="Place_ChiLianYuan", category="special"},
-    {place="Place_GuZhanChang", category="special"},
-    {place="Place_LongTai", category="special"},
-    {place="Place_QingLianShan", category="special"},
-    {place="Place_XuanKongDong", category="special"},
-    {place="Place_YiJieLieFeng", category="special"},
-    {place="Place_BigBamboo", category="special"},
-    {place="Place_WuDang_NanYanGong", category="special"},
-    {place="Place_WuDang_Taizipo", category="special"},
-    {place="Place_WuDang_ZiXiaoGong", category="special"},
-}
-
-local XW_Categories = {
-    {button="menuQuick", id="all", th="ทั้งหมด", en="All"},
-    {button="menuNpc", id="sect", th="สำนัก", en="Sects"},
-    {button="menuBook", id="region", th="เมือง/ภูมิภาค", en="Cities / Regions"},
-    {button="menuWorld", id="site", th="จุดย่อย", en="Sub-locations"},
-    {button="menuDeveloper", id="special", th="พิเศษ/DLC", en="Special / DLC"},
 }
 
 local function xw_en()
@@ -169,59 +110,21 @@ local function xw_school_place(mgr, row)
     return placeName
 end
 
-local function xw_nonempty(value)
-    if value == nil then return false end
-    local text = tostring(value)
-    return text ~= "" and text ~= "nil" and text ~= "0" and text ~= "None"
-end
-
-local function xw_place_has_map_route(def)
-    if def == nil then return false end
-    local fightMap, rpgFightMap = nil, nil
-    local fightReadable, rpgReadable = false, false
-    pcall(function() fightMap = def.FightMap; fightReadable = true end)
-    pcall(function() rpgFightMap = def.RPGFightMap; rpgReadable = true end)
-    if xw_nonempty(fightMap) or xw_nonempty(rpgFightMap) then return true end
-    -- Some Android XLua builds do not expose these PlaceDef fields. In that case
-    -- keep the candidate and let Change2FightMap be the final authority.
-    if not fightReadable and not rpgReadable then return true end
-    return false
-end
-
-local function xw_category_ok(category, rowCategory)
-    category = tostring(category or "all")
-    return category == "all" or category == tostring(rowCategory or "")
-end
-
-function Xaou_WarpSystem.GetDestinations(category)
-    category = tostring(category or "all")
+function Xaou_WarpSystem.GetDestinations()
     local mgr = xw_places_mgr()
-    local rows, seen = {}, {}
-    if mgr == nil then return rows end
-
-    local function add_place(placeName, rowCategory, schoolId, trusted)
-        placeName = tostring(placeName or "")
-        if placeName == "" or seen[placeName] or not xw_category_ok(category, rowCategory) then return end
-        local def = xw_place_def(mgr, placeName)
-        if def == nil then return end
-        if trusted ~= true and not xw_place_has_map_route(def) then return end
-        seen[placeName] = true
-        rows[#rows + 1] = {
-            school = schoolId,
-            category = rowCategory,
-            place = placeName,
-            name = xw_place_name(def, placeName),
-            locked = xw_is_locked(mgr, placeName),
-        }
-    end
-
-    -- Sect routes were already runtime-tested, so keep them even on XLua builds
-    -- where FightMap/RPGFightMap fields are not readable from PlaceDef.
+    local rows = {}
     for _, school in ipairs(XW_Schools) do
-        add_place(xw_school_place(mgr, school), "sect", school.school, true)
-    end
-    for _, row in ipairs(XW_PlaceCandidates) do
-        add_place(row.place, row.category, nil, false)
+        local placeName = xw_school_place(mgr, school)
+        local def = xw_place_def(mgr, placeName)
+        -- Only offer destinations that the running game confirms exist.
+        if def ~= nil then
+            rows[#rows + 1] = {
+                school = school.school,
+                place = placeName,
+                name = xw_place_name(def, placeName),
+                locked = xw_is_locked(mgr, placeName),
+            }
+        end
     end
     return rows
 end
@@ -427,36 +330,27 @@ function Xaou_CloseWarpWindow()
     end
 end
 
-local function xw_category_title()
-    for _, row in ipairs(XW_Categories) do
-        if row.id == XW_Category then return xw_t(row.th, row.en) end
-    end
-    return xw_t("ทั้งหมด", "All")
-end
-
 local function xw_refresh(view)
-    local rows = Xaou_WarpSystem.GetDestinations(XW_Category)
+    local rows = Xaou_WarpSystem.GetDestinations()
     local maxPage = math.max(1, math.ceil(#rows / XW_PageSize))
     XW_Page = math.max(1, math.min(XW_Page, maxPage))
     local first = (XW_Page - 1) * XW_PageSize + 1
     XW_Visible = {}
 
     xw_text(xw_child(view, "title"), xw_t("แผนที่วาร์ป", "Teleport Map"))
-    xw_text(xw_child(view, "subtitle"), xw_t("คัดจาก PlaceDef จริงของเกม: สำนัก เมือง จุดย่อย และสถานที่พิเศษ", "Runtime PlaceDef destinations: sects, regions, sub-locations and special places"))
-    xw_text(xw_child(view, "sectionTitle"), xw_t("เลือกสถานที่ • ", "Choose Destination • ") .. xw_category_title())
-    xw_text(xw_child(view, "description"), xw_t("พบสถานที่ที่เข้าได้ ", "Enterable destinations: ") .. tostring(#rows) .. xw_t(" แห่ง  |  หน้า ", "  |  Page ") .. tostring(XW_Page) .. "/" .. tostring(maxPage))
+    xw_text(xw_child(view, "subtitle"), xw_t("ใช้ Place ID จริงของเกม และให้เกมเลือก FightMap/RPGFightMap", "Uses game Place IDs and lets the game choose FightMap/RPGFightMap"))
+    xw_text(xw_child(view, "sectionTitle"), xw_t("เลือกสถานที่", "Choose Destination"))
+    xw_text(xw_child(view, "description"), xw_t("พบสถานที่ที่ใช้ได้ ", "Available destinations: ") .. tostring(#rows) .. xw_t(" แห่ง  |  หน้า ", "  |  Page ") .. tostring(XW_Page) .. "/" .. tostring(maxPage))
     local targetName = xw_t("NPC ที่เลือก", "Selected NPC")
     local target = xw_pick_target(XW_Target)
     if target ~= nil and Xaou_SafeNpcName then pcall(function() targetName = Xaou_SafeNpcName(target) end) end
     xw_text(xw_child(view, "npcName"), xw_t("วาร์ป NPC: ", "Teleport NPC: ") .. tostring(targetName))
-    xw_text(xw_child(view, "npcStatus"), xw_t("จุดที่ไม่มีฉาก FightMap/RPGFightMap จะถูกซ่อน • [ล็อก] คือยังไม่ปลดล็อก", "Places without a FightMap/RPGFightMap route are hidden • [LOCKED] means not unlocked"))
+    xw_text(xw_child(view, "npcStatus"), xw_t("สถานที่ที่ล็อกจะมีคำว่า [ล็อก] และระบบจะไม่ปลดล็อกให้อัตโนมัติ", "Locked locations are marked [LOCKED] and are not auto-unlocked"))
     xw_text(xw_child(view, "brand"), "Xaou 009 Warp")
     xw_visible(xw_child(view, "npcPortrait"), false)
 
-    for _, menu in ipairs(XW_Categories) do
-        local button = xw_child(view, menu.button)
-        xw_visible(button, true)
-        xw_text(button, (XW_Category == menu.id and "▶ " or "") .. xw_t(menu.th, menu.en))
+    for _, menuName in ipairs({"menuQuick", "menuNpc", "menuBook", "menuWorld", "menuDeveloper"}) do
+        xw_visible(xw_child(view, menuName), false)
     end
 
     for i = 1, XW_PageSize do
@@ -484,7 +378,7 @@ local function xw_refresh(view)
 end
 
 local function xw_native_fallback()
-    local rows = Xaou_WarpSystem.GetDestinations("all")
+    local rows = Xaou_WarpSystem.GetDestinations()
     local helper = nil
     pcall(function() helper = CS.WorldLuaHelper() end)
     if helper == nil or helper.ShowSelectBox == nil then
@@ -521,7 +415,6 @@ end
 function Xaou_OpenWarpWindow(target)
     Xaou_CloseWarpWindow()
     XW_Target = target or Xaou_CurrentNpcTarget
-    XW_Category = "all"
     XW_Page = 1
 
     local pkg = UIPackage or (CS.FairyGUI and CS.FairyGUI.UIPackage)
@@ -537,16 +430,6 @@ function Xaou_OpenWarpWindow(target)
     root:AddChild(view)
     view.x = (root.width - view.width) / 2
     view.y = (root.height - view.height) / 2
-
-    for _, menu in ipairs(XW_Categories) do
-        local categoryId = menu.id
-        local button = xw_child(view, menu.button)
-        if button ~= nil then button.onClick:Add(function()
-            XW_Category = categoryId
-            XW_Page = 1
-            xw_refresh(view)
-        end) end
-    end
 
     for i = 1, XW_PageSize do
         local index = i
@@ -566,7 +449,7 @@ function Xaou_OpenWarpWindow(target)
         if XW_Page > 1 then XW_Page = XW_Page - 1; xw_refresh(view) end
     end) end
     if nextb ~= nil then nextb.onClick:Add(function()
-        local maxPage = math.max(1, math.ceil(#Xaou_WarpSystem.GetDestinations(XW_Category) / XW_PageSize))
+        local maxPage = math.max(1, math.ceil(#Xaou_WarpSystem.GetDestinations() / XW_PageSize))
         if XW_Page < maxPage then XW_Page = XW_Page + 1; xw_refresh(view) end
     end) end
 
